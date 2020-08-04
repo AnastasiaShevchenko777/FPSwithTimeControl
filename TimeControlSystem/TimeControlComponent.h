@@ -33,7 +33,7 @@ private:
 	FTimerHandle slowMoTimer;
 	FTimerHandle resDelayTimer;
 	FTimerHandle freezTimer;
-	float freezeTime = 2.f;
+	float freezeTime = 0.f;
 	float curDelay=100.f;
 	UPROPERTY(EditDefaultsOnly)
 		float maxDelay = 100.f;

@@ -3,6 +3,7 @@
 
 #include "TimeControlComponent.h"
 #include <GameFramework/PawnMovementComponent.h>
+#include "TimeEffectsInterface.h"
 // Sets default values for this component's properties
 UTimeControlComponent::UTimeControlComponent()
 {
@@ -24,6 +25,19 @@ void UTimeControlComponent::BeginPlay()
 void UTimeControlComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	if (isTimeStoped)
+	{
+		float curTime = GetWorld()->GetUnpausedTimeSeconds();
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Purple, FString::Printf(TEXT(" %f"), curTime));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT(" %f"), freezeTime));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, FString::Printf(TEXT(" %f"), curTime-freezeTime));
+		if ( curTime - freezeTime > 1.f && curTime - freezeTime < 2.f)
+		{
+			freezeTime = GetWorld()->GetUnpausedTimeSeconds();
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, FString::Printf(TEXT("2 seconds passed")));
+			DecDelayStop();
+		}
+	}
 }
 
 void UTimeControlComponent::IncreaseDelay()
@@ -47,7 +61,7 @@ void UTimeControlComponent::SlowToNorm()
 	isTimeNormal = true;
 	isTimeSlow = false;
 	this->SetComponentTickEnabled(false);
-	//interface call
+	//ITimeEffectsInterface::Execute_SlowMoEffectOut(visualEffects);
 }
 
 void UTimeControlComponent::SetTimeToNormal()
@@ -78,11 +92,13 @@ void UTimeControlComponent::FreezeTime(bool enable)
 	if (!enable)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(freezTimer);
+		//ITimeEffectsInterface::Execute_StopTimeEffectOut(visualEffects);
 	}
 	else
 	{
 		GetWorld()->GetTimerManager().SetTimer(freezTimer, this, &UTimeControlComponent::DecDelayStop, 0.1f, true);
-		freezeTime = GetWorld()->GetTimeSeconds();
+		freezeTime = GetWorld()->GetUnpausedTimeSeconds();
+		//ITimeEffectsInterface::Execute_StopTimeEffectIn(visualEffects);
 	}
 }
 
@@ -125,7 +141,7 @@ inline void UTimeControlComponent::MakeTimeSlower()
 	GetWorld()->GetTimerManager().SetTimer(slowMoTimer, this, &UTimeControlComponent::DecDelaySlowMo, 0.1f, true);
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("Time slower"));
 	///TODO call interface
-	SlowMoEffects(true);
+	//ITimeEffectsInterface::Execute_SlowMoEffectIn(visualEffects);
 }
 
 void UTimeControlComponent::SlowMoEffects(bool enable)
