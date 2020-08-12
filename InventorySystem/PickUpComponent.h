@@ -1,10 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "InventoryComponent.h"
+#include "PickUpItem.h"
 #include "PickUpComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FTakeWeapon);
@@ -21,14 +20,13 @@ public:
 		AActor* playerlooksat = nullptr;
 	UPROPERTY(BlueprintReadOnly)
 		AActor* canTake = nullptr;
-	UPROPERTY(BlueprintReadOnly)
-		FString itemName = "";
 	UPROPERTY(BlueprintReadWrite)
 		AActor* takenWeapon = nullptr;
 	UPROPERTY(BlueprintAssignable)
 		FTakeWeapon TakeWeapon;
 	UPROPERTY(BlueprintReadOnly)
 		int curGrenadeSlot = 3;
+	
 	UFUNCTION(BlueprintCallable)
 		void TakeItem();
 	UFUNCTION(BlueprintCallable)
@@ -45,6 +43,7 @@ public:
 		void DecreaseSlotQuantity(int slotNumber, int subtrahend = 1);
 	UFUNCTION(BlueprintCallable)
 		void SwapGrenade();
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -67,5 +66,5 @@ private:
 		bool drawdebug = false;
 	//USoundBase* playingSound=nullptr;
 	FHitResult GetFirstPhysicsBodyInReach();
-	FString GetHitName(FHitResult hitResult);
+	FName GetHitName(FHitResult hitResult);
 };

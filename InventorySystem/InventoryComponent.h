@@ -4,10 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "PickUpItem.h"
-#include "QuickInventoryPanel.h" 
 #include "Runtime/UMG/Public/Blueprint/UserWidget.h"
 #include <Runtime\UMG\Public\Components\CanvasPanel.h>
+#include "PickUpItem.h"
 #include "InventoryComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FPlayWidgetAnimation);
@@ -15,6 +14,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSetActiveSlot, int, slotNumber);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUpdateInventoryWidget);
 
 USTRUCT(BlueprintType)
+
 struct FSlotStruct
 {
 	GENERATED_BODY()
@@ -25,6 +25,8 @@ struct FSlotStruct
 		int quantity; 
 };
 
+class UQuickInventoryPanel;
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class DELAY_API UInventoryComponent : public UActorComponent
 {
@@ -33,9 +35,10 @@ class DELAY_API UInventoryComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UInventoryComponent();
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Blueprintable)	//Cell contents
-		TArray <FSlotStruct> inventory;
+	UFUNCTION(BlueprintCallable)
+		TArray<FSlotStruct> GetInventoryArray() const { return inventoryArray; }
+	UFUNCTION(BlueprintCallable)
+		void SetInventoryArray(TArray<FSlotStruct> val) { inventoryArray = val; }
 
 	UFUNCTION(BlueprintCallable)	//Returns current slot count
 		int GetSlotsCount() const { return slotsCount; }
@@ -90,6 +93,8 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;		
 
 private:
+	UPROPERTY(EditDefaultsOnly)	//Cell contents
+		TArray <FSlotStruct> inventoryArray;		
 	UPROPERTY(EditDefaultsOnly)	// Reference UMG Asset in the Editor(main window)
 		TSubclassOf<class UUserWidget> InventoryUI;
 	UPROPERTY(EditDefaultsOnly)	// Reference UMG Asset in the Editor(quick lower panel)

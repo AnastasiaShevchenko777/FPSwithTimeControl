@@ -2,10 +2,9 @@
 
 
 #include "PickUpComponent.h"
-#include "PickUpItem.h"
 #include "DrawDebugHelpers.h"
 #include "CollisionQueryParams.h"
-
+#include "InventoryComponent.h"
 
 // Sets default values for this component's properties
 UPickUpComponent::UPickUpComponent()
@@ -20,9 +19,7 @@ UPickUpComponent::UPickUpComponent()
 void UPickUpComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
-	
+	// ...	
 }
 // Called every frame
 void UPickUpComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -108,18 +105,18 @@ FHitResult UPickUpComponent::GetFirstPhysicsBodyInReach()
 	return hitResult;
 }
 
-FString UPickUpComponent::GetHitName(FHitResult hitResult)
+FName UPickUpComponent::GetHitName(FHitResult hitResult)
 {
-	FString name;
+	FName name=TEXT("");
 	AActor* ActorHit = hitResult.GetActor();
 	if (ActorHit)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("Trace hit some Actor"));
 		APickUpItem* base_pickUp = Cast<APickUpItem>(ActorHit);
-		if (base_pickUp) { name = ActorHit->GetName(); }
-		else { name = ""; }
+		if (base_pickUp) { name = FName(*(ActorHit->GetName())); }
+		else { name = TEXT(""); }
 	}
-	else { name = ""; }
+	else { name = TEXT(""); }
 	return name;
 }
 
@@ -131,9 +128,6 @@ void UPickUpComponent::TakeItem()
 	GetOwner()->GetOverlappingActors(overlapedItems, filter);
 	for (int i = 0; i < overlapedItems.Num(); i++)
 	{
-		//APickUpWeapon* whatWeeSee = Cast<APickUpWeapon>(overlapedItems[i]);
-		//if (!whatWeeSee)
-		//{
 			if (overlapedItems[i]->GetClass()->ImplementsInterface(UInteractInterface::StaticClass()))
 			{
 				int slotNumber = IInteractInterface::Execute_GetNumberOfSlot(overlapedItems[i]);
@@ -151,7 +145,6 @@ void UPickUpComponent::TakeItem()
 				inventory->UpdateInventoryWidget.Broadcast();
 				break;
 			}
-		//}
 	}
 }
 
@@ -163,7 +156,7 @@ int UPickUpComponent::GetSlotQuantity(int slotNumber)
 		UInventoryComponent* inventory = ((AActor*)gameMode)->FindComponentByClass<UInventoryComponent>();
 		if (inventory)
 		{
-			int quantity = inventory->inventory[slotNumber].quantity;
+			int quantity = inventory->GetInventoryArray()[slotNumber].quantity;
 			return quantity;
 		}
 		else return 0;
@@ -182,9 +175,9 @@ void UPickUpComponent::DecreaseSlotQuantity(int slotNumber, int subtrahend/*=1*/
 		UInventoryComponent* inventory = ((AActor*)gameMode)->FindComponentByClass<UInventoryComponent>();
 		if (inventory)
 		{
-			inventory->inventory[slotNumber].quantity -= subtrahend;
-			if (inventory->inventory[slotNumber].quantity < 0)
-				inventory->inventory[slotNumber].quantity = 0;
+			inventory->GetInventoryArray()[slotNumber].quantity -= subtrahend;
+			if (inventory->GetInventoryArray()[slotNumber].quantity < 0)
+				inventory->GetInventoryArray()[slotNumber].quantity = 0;
 		}
 	}
 }
@@ -230,11 +223,11 @@ FItemStruct UPickUpComponent::GetSlotContent(int slotNumber)
 	UInventoryComponent* inventory = ((AActor*)gameMode)->FindComponentByClass<UInventoryComponent>();
 	if (inventory)
 	{
-		return inventory->inventory[slotNumber].Item;
+		return inventory->GetInventoryArray()[slotNumber].Item;
 	}
 	else
 	{
-		FSlotStruct empty;
+		FSlotStruct empty=FSlotStruct();
 		return empty.Item;
 	}
 }
@@ -247,7 +240,7 @@ AActor* UPickUpComponent::SpawnFromSlot(int slotNumber, FVector location, FRotat
 	AActor* item = nullptr;
 	if (inventory)
 	{
-		TSubclassOf<AActor> spawnClass = inventory->inventory[slotNumber].Item.classToSpawn;
+		TSubclassOf<AActor> spawnClass = inventory->GetInventoryArray()[slotNumber].Item.classToSpawn;
 		if (spawnClass != nullptr)
 		{
 			item = GetWorld()->SpawnActor<AActor>(
@@ -257,8 +250,8 @@ AActor* UPickUpComponent::SpawnFromSlot(int slotNumber, FVector location, FRotat
 				SpawnInfo
 				);
 			item->AttachToComponent(componentToAttach, FAttachmentTransformRules::KeepWorldTransform, socketName);
-			if (inventory->inventory[slotNumber].Item.isStackable)
-				inventory->inventory[slotNumber].quantity -= 1;
+			if (inventory->GetInventoryArray()[slotNumber].Item.isStackable)
+				inventory->GetInventoryArray()[slotNumber].quantity -= 1;
 		}
 	}
 	return item;

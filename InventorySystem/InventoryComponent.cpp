@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "InventoryComponent.h"
+#include "QuickInventoryPanel.h"
 
 // Sets default values for this component's properties
 UInventoryComponent::UInventoryComponent()
@@ -9,23 +8,21 @@ UInventoryComponent::UInventoryComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
+	PrepareInventory();
 	// ...
 }
 
 // Called when the game starts
 void UInventoryComponent::BeginPlay()
 {
-	Super::BeginPlay();
+	Super::BeginPlay();	
+	// ...	
 	PrepareInventory();
-	// ...
-	
 }
 // Called every frame
 void UInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 	// ...
 }
 
@@ -48,7 +45,6 @@ void UInventoryComponent::RemoveInventoryWidget()
 {
 	if (currentInventory)
 	{
-		//currentInventory->RemoveFromParent();
 		currentInventory->RemoveFromViewport();
 		currentInventory = nullptr;
 		//GetOwner()->GetWorld()->GetFirstPlayerController()->SetInputMode(FInputModeGameOnly());
@@ -141,7 +137,7 @@ APickUpItem* UInventoryComponent::DropItem()
 {
 	APickUpItem* newItem = nullptr;
 	FActorSpawnParameters SpawnInfo;
-	TSubclassOf<AActor> spawnClass = inventory[GetActiveWeaponSlot()].Item.pickUpClass;//choose class
+	TSubclassOf<AActor> spawnClass = inventoryArray[activeWeaponSlot].Item.pickUpClass;//choose class
 	if (spawnClass != nullptr)
 	{
 		newItem = GetWorld()->SpawnActor<APickUpItem>(
@@ -158,15 +154,9 @@ APickUpItem* UInventoryComponent::DropItem()
 			int ammoCount = 0;
 			newItem->SetAmmunitionQuantity(IIFireWeapon::Execute_GetCurrentAmmoCount(character->GetCurrentWeapon()));
 		}*/
-		inventory[GetActiveWeaponSlot()].quantity -= 1;
-		FItemStruct empty;
-		empty.icon = GetEmptySlotIcon();
-		empty.ammunitionQuantity = 0;
-		empty.classToSpawn = nullptr;
-		empty.isStackable = false;
-		empty.maxStackSize = 0;
-		empty.pickUpClass = nullptr;
-		inventory[GetActiveWeaponSlot()].Item = empty;
+		inventoryArray[GetActiveWeaponSlot()].quantity -= 1;
+		FItemStruct empty = FItemStruct();
+		inventoryArray[GetActiveWeaponSlot()].Item = empty;
 	}
 	ShowQuickPanel(0);
 	return newItem;
@@ -174,28 +164,28 @@ APickUpItem* UInventoryComponent::DropItem()
 
 void UInventoryComponent::PrepareInventory()
 {
-	inventory.SetNum(slotsCount, true);
+	inventoryArray.SetNum(slotsCount, true);
 }
 
 void UInventoryComponent::CreateStack(FSlotStruct contentToAdd, int slotIndex)
 {
-	inventory[slotIndex] = contentToAdd;
+	inventoryArray[slotIndex] = contentToAdd;
 }
 
 bool UInventoryComponent::AddToStack(FSlotStruct& content, int slotIndex)
 {
-	int currentStackQuantity = inventory[slotIndex].quantity;
+	int currentStackQuantity = inventoryArray[slotIndex].quantity;
 	if (currentStackQuantity > 0)//if slot contain item
 	{
-		if ((currentStackQuantity + content.quantity) <= inventory[slotIndex].Item.maxStackSize)//if slot has place, increase quantity;
+		if ((currentStackQuantity + content.quantity) <= inventoryArray[slotIndex].Item.maxStackSize)//if slot has place, increase quantity;
 		{
-			inventory[slotIndex].quantity += content.quantity;
+			inventoryArray[slotIndex].quantity += content.quantity;
 			return true;
 		}
 		else //set slot quantity to max, decrease item quantity;
 		{
-			inventory[slotIndex].quantity = inventory[slotIndex].Item.maxStackSize;
-			content.quantity -= (inventory[slotIndex].Item.maxStackSize - currentStackQuantity);
+			inventoryArray[slotIndex].quantity = inventoryArray[slotIndex].Item.maxStackSize;
+			content.quantity -= (inventoryArray[slotIndex].Item.maxStackSize - currentStackQuantity);
 			return false;
 		}
 	}

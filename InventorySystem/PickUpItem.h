@@ -11,9 +11,18 @@ USTRUCT(BlueprintType) //Structer contain base information about item;
 struct FItemStruct
 {
 	GENERATED_BODY()
+	// default constructor;
+	FItemStruct() :
+		name(TEXT("default")),icon(nullptr),isStackable(true),maxStackSize(5),classToSpawn(nullptr),pickUpClass(nullptr),ammunitionQuantity(0) 	{}
+	// constructor with parametrs;
+	FItemStruct(FName _name, UTexture2D* _icon, bool _isStackable, int _maxStackSize, TSubclassOf<AActor> _classToSpawn, TSubclassOf<APickUpItem> _pickUpClass, int _ammunitionQuantity) : 
+		name(_name), icon(_icon), isStackable(_isStackable), maxStackSize(_maxStackSize), classToSpawn(_classToSpawn), pickUpClass(_pickUpClass), ammunitionQuantity(_ammunitionQuantity) {}
+	// copy constructor;
+	FItemStruct(const FItemStruct& item) :
+		name(item.name), icon(item.icon), isStackable(item.isStackable), maxStackSize(item.maxStackSize), classToSpawn(item.classToSpawn), pickUpClass(item.pickUpClass), ammunitionQuantity(item.ammunitionQuantity) {}
 
-		UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-		FText name;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+		FName name;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 		UTexture2D* icon;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
@@ -28,44 +37,67 @@ struct FItemStruct
 		int ammunitionQuantity;
 };
 
+class UPickUpDiscriptionDataAsset;
+
 UCLASS()
 class DELAY_API APickUpItem : public AActor, public IInteractInterface
 {
 	GENERATED_BODY()
 	
-public:	
+public:
+	virtual void OnConstruction(const FTransform& Transform) override;
+
 	// Sets default values for this actor's properties
 	APickUpItem();
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite) //Item`s description, it will write to slot
-		FItemStruct itemDiscr;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite) 
-		int howMatchItemsGives = 1;
-
-	int GetSlotNumber() const { return slotNumber; }
-	USoundBase* GetPickupSound() const { return pickupSound; }
+	UFUNCTION(BlueprintCallable)
+		FItemStruct GetItemInfo() const { return itemDiscr; }
+	UFUNCTION(BlueprintCallable)
+		void SetItemProperties(FItemStruct _newVal) { itemDiscr = _newVal; }
+	
+	UFUNCTION(BlueprintCallable)
+		int GetSlotNumber() const { return slotNumber; }
+	UFUNCTION(BlueprintCallable)
+		void SetSlotNumber(int _slotNumber) { slotNumber = _slotNumber; }
 
 	UFUNCTION(BlueprintCallable)
+		int GetHowMatchItemsGives() const { return howMatchItemsGives; }
+	
+	UFUNCTION(BlueprintCallable)
 		void SetAmmunitionQuantity(int newQuantity) { itemDiscr.ammunitionQuantity = newQuantity; };//Use this for weapon, allow to set ammo count after weapon was taken off;
+	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
 		void Interact();
 	virtual void Interact_Implementation() override;
-
+	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
 		int GetNumberOfSlot();
 	virtual int GetNumberOfSlot_Implementation() override;
-
+	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Interface")
 		USoundBase* GetInteractSound();
 	virtual USoundBase* GetInteractSound_Implementation() override;
+
+	USoundBase* GetPickupSound() const { return pickupSound; }
+
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly) //Sound when pickUp
-		USoundBase* pickupSound = nullptr;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-		int slotNumber = 0;
+	virtual void BeginPlay() override;				
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		UPickUpDiscriptionDataAsset* discription=nullptr;
+	
+	FItemStruct itemDiscr; //Item`s description, it will write to slot
+	USoundBase* pickupSound = nullptr;//Sound when pickUp
+	int howMatchItemsGives = 1;
+	int slotNumber = 0;
+	
+	UPROPERTY(VisibleAnywhere)
+		UStaticMeshComponent* mesh = nullptr;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+private:
+	void InitializeInfo();
 };
